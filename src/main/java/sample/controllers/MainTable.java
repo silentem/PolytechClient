@@ -19,10 +19,7 @@ import java.net.URL;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class MainTable extends TableView<Subject> {
 
@@ -139,7 +136,7 @@ public class MainTable extends TableView<Subject> {
                 }
 
                 Integer value = jsonValue.get("completed").getAsInt();
-                subject.getCompletedHoursValue().put(date, value);
+                subject.addCompletedHours(date, value);
             }
 
             group.addSubject(subject);
@@ -172,11 +169,11 @@ public class MainTable extends TableView<Subject> {
     }
 
     public void fillCompletedHoursColumns() {
-        Set<Date> dates;
+        List<Date> dates;
         if (group == null) return;
         if (group.getSubjects().size() == 0) return;
 
-        dates = group.getSubjects().get(0).getCompletedHoursValue().keySet();
+        dates = group.getSubjects().get(0).getDates();
 
         for (int i = 0; i < dates.size(); i++) {
             //getting date from array
@@ -192,7 +189,7 @@ public class MainTable extends TableView<Subject> {
             subject.addCompletedHours(date, subject.getWeeklyHoursValue());
         }
 
-        String sDate = date.toString();
+        String sDate = new SimpleDateFormat("dd.MM.yyyy").format(date);
         TableColumn<Subject, Integer> completedColumn = new TableColumn<>("В " + sDate);
         completedColumn.setMinWidth(100);
 
@@ -210,14 +207,16 @@ public class MainTable extends TableView<Subject> {
             }
 
         }));
-//        completedColumn.setOnEditCommit(event -> {
-//            Integer value = event.getNewValue();
-//            event.
-//            event.getTableView().getItems().get(
-//                    event.getTablePosition().getRow());
-//
-//            this.refresh();
-//        });
+        completedColumn.setOnEditCommit(event -> {
+            Integer value = event.getNewValue();
+            int pos = event.getTablePosition().getColumn();
+            event.getTableView().getItems().get(
+                    event.getTablePosition().getRow()).setCompletedHours(value, (pos - 6)/2);
+
+            this.refresh();
+        });
+
+        int last = group.getSubjects().get(0).getCompletedHours().size() - 1;
 
         //creating value factory for completed column
         completedColumn.setCellValueFactory(p -> {
@@ -225,11 +224,8 @@ public class MainTable extends TableView<Subject> {
             //getting subject into variable
             Subject subject = p.getValue();
 
-            //getting completedHours map into variable
-            Map<Date, Integer> completedHours = subject.getCompletedHoursValue();
-
             //getting dateKey for SSP()
-            Integer value = completedHours.get(date);
+            Integer value = subject.getCompletedHours().get(last);
 
             //returning property
             return new SimpleObjectProperty<>(value);
@@ -246,11 +242,8 @@ public class MainTable extends TableView<Subject> {
             //getting subject into variable
             Subject subject = param.getValue();
 
-            //getting map from model
-            Map<Date, Integer> leftToDoHoursValue = subject.getLeftToDoHoursValue();
-
-            //getting value
-            Integer value = leftToDoHoursValue.get(date);
+            //getting dateKey for SSP()
+            Integer value = subject.getLeftToDoHours().get(last);
 
             //returning property
             return new SimpleObjectProperty<>(value);

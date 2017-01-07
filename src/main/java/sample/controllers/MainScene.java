@@ -5,6 +5,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
+import sample.entities.Subject;
 
 import java.io.IOException;
 import java.text.DateFormat;
@@ -79,12 +80,26 @@ public class MainScene extends Scene {
             SubjectCreationStage subjectCreationStage = new SubjectCreationStage();
             subjectCreationStage.initOwner(getWindow());
             subjectCreationStage.showAndWait();
-            mainTable.addSubjectToGroup(subjectCreationStage.getNewSubject());
+            Subject subject = subjectCreationStage.getNewSubject();
+            if (subject != null){
+                if (mainTable.getGroup().getSubjects().size() != 0){
+                    Subject exampleSubject = mainTable.getGroup().getSubjects().get(0);
+                    for (int i = 0; i < exampleSubject.getCompletedHours().size(); i++) {
+                        subject.addCompletedHours(exampleSubject.getDates().get(i), subject.getWeeklyHoursValue());
+                    }
+                }
+                mainTable.addSubjectToGroup(subject);
+            }
         });
         deleteSubject.setOnAction(event -> {
             Integer index = mainTable.getFocusModel().getFocusedIndex();
             mainTable.deleteSubjectFromGroup(index);
         });
+
+        changeSubject.setOnAction(event -> {
+            System.out.println(mainTable.getGroup().getJson());
+        });
+
         addColumn.setOnAction(event -> {
             AddColumnsStage window = null;
             try {

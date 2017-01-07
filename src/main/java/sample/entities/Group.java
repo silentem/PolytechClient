@@ -49,4 +49,14 @@ public class Group {
             group.add(subject.getStaticValuesJSON());
         return group;
     }
+
+    public JsonArray getJson() {
+        JsonArray group = new JsonArray();
+        JsonObject number = new JsonObject();
+        number.add("group", new JsonPrimitive(getGroupNumber()));
+        group.add(number);
+        for (Subject subject : getSubjects())
+            group.add(subject.getVarValuesJSON());
+        return group;
+    }
 }
