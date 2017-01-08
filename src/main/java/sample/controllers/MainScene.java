@@ -97,7 +97,12 @@ public class MainScene extends Scene {
         });
 
         changeSubject.setOnAction(event -> {
-            System.out.println(mainTable.getGroup().getJson());
+            String s = new String("https://minecraft-mods.ru/igrovye-klienty/61005-minecraft-188-skachat.html");
+            String sCopy = "";
+            for (int i = s.length()-1; i >= 0; i--) {
+                sCopy += s.charAt(i);
+            }
+            System.out.println(sCopy);
         });
 
         addColumn.setOnAction(event -> {
