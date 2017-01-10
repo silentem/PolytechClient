@@ -35,7 +35,7 @@ public class FindGroupStage extends Stage {
         this.setResizable(false);
     }
 
-    public Integer getGroupNumber(){
+    public Integer getGroupNumber() {
         return groupNumber;
     }
 

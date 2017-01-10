@@ -11,7 +11,7 @@ import javafx.stage.Stage;
 import java.io.IOException;
 import java.time.format.DateTimeFormatter;
 
-public class AddColumnsStage extends Stage{
+public class AddColumnsStage extends Stage {
 
     private String date;
 

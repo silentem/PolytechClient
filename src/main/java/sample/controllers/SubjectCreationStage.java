@@ -15,6 +15,51 @@ public class SubjectCreationStage extends Stage {
 
     private Subject resultSubject;
 
+    public SubjectCreationStage(Subject subject){
+        Parent root = null;
+        try {
+            root = FXMLLoader.load(getClass().getResource("/fxml/subjectCreationStage.fxml"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        Scene scene = new Scene(root);
+
+        TextField subjectNameField = ((TextField) scene.lookup("#subjectName"));
+        subjectNameField.setText(subject.getSubjectName());
+        TextField professorPIPField = ((TextField) scene.lookup("#professorPIP"));
+        professorPIPField.setText(subject.getProfessorInitials());
+        TextField changedHoursField = ((TextField) scene.lookup("#changedHoursValue"));
+        changedHoursField.setText(String.valueOf(subject.getChangedHoursValue()));
+        TextField hoursQuoteField = ((TextField) scene.lookup("#hoursQuoteValue"));
+        hoursQuoteField.setText(String.valueOf(subject.getHoursQuoteValue()));
+        TextField weeklyHoursField = ((TextField) scene.lookup("#weeklyHoursValue"));
+        weeklyHoursField.setText(String.valueOf(subject.getTotalHours()));
+
+        Button createButton = ((Button) scene.lookup("#create"));
+
+        createButton.setOnAction(event -> {
+
+            String subjectName = subjectNameField.getText();
+            String professorName = professorPIPField.getText();
+
+            int changedHours = Integer.parseInt(changedHoursField.getText());
+            int totalHoursToFinish = Integer.parseInt(hoursQuoteField.getText());
+            int weeklyHours = Integer.parseInt(weeklyHoursField.getText());
+
+            resultSubject = new Subject(subjectName, professorName, totalHoursToFinish);
+            resultSubject.setChangedHoursValue(changedHours);
+            resultSubject.setWeeklyHoursValue(weeklyHours);
+
+            close();
+
+        });
+        this.setScene(scene);
+        this.initModality(Modality.APPLICATION_MODAL);
+        this.setTitle("Створення предмета");
+        this.centerOnScreen();
+        this.setResizable(false);
+    }
+
     public SubjectCreationStage() {
         super();
 
@@ -56,6 +101,10 @@ public class SubjectCreationStage extends Stage {
         this.setTitle("Створення предмета");
         this.centerOnScreen();
         this.setResizable(false);
+    }
+
+    private void init(){
+
     }
 
     public Subject getNewSubject() {

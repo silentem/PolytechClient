@@ -73,8 +73,6 @@ public class MainTable extends TableView<Subject> {
                     .setChangedHoursValue(value);
             this.refresh();
         });
-        //TODO convert subjects to JSON
-        //TODO set editable cells
         TableColumn<sample.entities.Subject, String> totalHoursToFinishColumn = new TableColumn<>("К-ть годин до виконання");
         totalHoursToFinishColumn.setMinWidth(100);
         totalHoursToFinishColumn.setCellValueFactory(

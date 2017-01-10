@@ -36,10 +36,6 @@ public class Group {
         return subjects;
     }
 
-    public void setSubjects(ArrayList<Subject> subjects) {
-        this.subjects = subjects;
-    }
-
     public JsonArray getStaticValuesJSON() {
         JsonArray group = new JsonArray();
         JsonObject number = new JsonObject();
@@ -51,6 +47,7 @@ public class Group {
     }
 
     public JsonArray getJson() {
+        //TODO fix this json method
         JsonArray group = new JsonArray();
         JsonObject number = new JsonObject();
         number.add("group", new JsonPrimitive(getGroupNumber()));

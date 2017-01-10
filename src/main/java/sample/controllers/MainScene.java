@@ -1,9 +1,10 @@
 package sample.controllers;
 
-import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
 import javafx.scene.layout.VBox;
 import sample.entities.Subject;
 
@@ -20,6 +21,11 @@ public class MainScene extends Scene {
 
         MainTable mainTable = new MainTable();
 //        mainTable.initGroup(35);
+
+        //TODO summary fields, table size, css
+        //TODO create attention windows
+        //TODO rework some dialog windows
+        //TODO CLEAR CODE
 
         MenuBar menuBar = new MenuBar();
 
@@ -51,8 +57,13 @@ public class MainScene extends Scene {
 
         ((javafx.scene.Group) getRoot()).getChildren().addAll(container);
 
+        createGroup.setOnAction(event -> {
+            //TODO create method to create group
+        });
 
-        //TODO create summary fields
+        deleteGroup.setOnAction(event -> {
+            //TODO create method to delete group
+        });
 
         openGroup.setOnAction(event -> {
 
@@ -66,11 +77,14 @@ public class MainScene extends Scene {
             if (findGroupStage != null)
                 findGroupStage.showAndWait();
 
+            //TODO add getting subjects list from server and choosing logic
+
         });
 
         saveGroup.setOnAction(event -> {
             try {
                 Connection.saveGroupToServer(mainTable.getGroup().getStaticValuesJSON());
+                //TODO add saving variable values
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -81,8 +95,8 @@ public class MainScene extends Scene {
             subjectCreationStage.initOwner(getWindow());
             subjectCreationStage.showAndWait();
             Subject subject = subjectCreationStage.getNewSubject();
-            if (subject != null){
-                if (mainTable.getGroup().getSubjects().size() != 0){
+            if (subject != null) {
+                if (mainTable.getGroup().getSubjects().size() != 0) {
                     Subject exampleSubject = mainTable.getGroup().getSubjects().get(0);
                     for (int i = 0; i < exampleSubject.getCompletedHours().size(); i++) {
                         subject.addCompletedHours(exampleSubject.getDates().get(i), subject.getWeeklyHoursValue());
@@ -97,12 +111,19 @@ public class MainScene extends Scene {
         });
 
         changeSubject.setOnAction(event -> {
-            String s = new String("https://minecraft-mods.ru/igrovye-klienty/61005-minecraft-188-skachat.html");
-            String sCopy = "";
-            for (int i = s.length()-1; i >= 0; i--) {
-                sCopy += s.charAt(i);
+            Subject subject = mainTable.getSelectionModel().selectedItemProperty().get();
+            SubjectCreationStage subjectCreationStage = new SubjectCreationStage(subject);
+            subjectCreationStage.initOwner(getWindow());
+            subjectCreationStage.showAndWait();
+            Subject newSubject = subjectCreationStage.getNewSubject();
+            if (newSubject != null){
+                subject.setProfessorInitials(newSubject.getProfessorInitials());
+                subject.setSubjectName(newSubject.getSubjectName());
+                subject.setChangedHoursValue(newSubject.getChangedHoursValue());
+                subject.setHoursQuoteValue(newSubject.getHoursQuoteValue());
+                subject.setWeeklyHoursValue(newSubject.getWeeklyHoursValue());
+                mainTable.refresh();
             }
-            System.out.println(sCopy);
         });
 
         addColumn.setOnAction(event -> {
@@ -127,7 +148,6 @@ public class MainScene extends Scene {
 
                 mainTable.addCompletedHoursColumns(date);
 
-                //TODO editable fields and save info in subject's connected arrays
                 //TODO realize creating editing title window on double click
             }
         });
