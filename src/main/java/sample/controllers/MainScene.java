@@ -1,18 +1,22 @@
 package sample.controllers;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuBar;
-import javafx.scene.control.MenuItem;
+import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
+import sample.entities.Group;
 import sample.entities.Subject;
 
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+import java.util.Optional;
 
 public class MainScene extends Scene {
 
@@ -20,7 +24,6 @@ public class MainScene extends Scene {
         super(root);
 
         MainTable mainTable = new MainTable();
-//        mainTable.initGroup(35);
 
         //TODO summary fields, table size, css
         //TODO create attention windows
@@ -58,36 +61,115 @@ public class MainScene extends Scene {
         ((javafx.scene.Group) getRoot()).getChildren().addAll(container);
 
         createGroup.setOnAction(event -> {
+            CreateGroupStage createGroupStage = new CreateGroupStage();
+            createGroupStage.initOwner(getWindow());
+            createGroupStage.showAndWait();
+            Integer groupNumber = createGroupStage.getGroupNumber();
+            if (groupNumber != null) {
+                if (mainTable.getGroup() != null) {
+                    Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+                    alert.setTitle("Увага!");
+                    alert.setHeaderText(null);
+                    alert.setContentText("Чи зберегти теперішню группу?");
+
+                    ButtonType yesButton = new ButtonType("Так");
+                    ButtonType noButton = new ButtonType("Ні");
+                    ButtonType cancelButton = new ButtonType("Відміна", ButtonBar.ButtonData.CANCEL_CLOSE);
+
+                    alert.getButtonTypes().setAll(yesButton, noButton, cancelButton);
+
+                    Optional<ButtonType> result = alert.showAndWait();
+                    if (result.get() == yesButton) {
+                        //TODO save old group and create new
+                    } else if (result.get() == noButton) {
+                        try {
+                            mainTable.createGroup(groupNumber);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                }
+            }
             //TODO create method to create group
         });
 
         deleteGroup.setOnAction(event -> {
-            //TODO create method to delete group
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("Увага!");
+            alert.setHeaderText(null);
+            alert.setContentText("Чи ви дійсно бажаєте ВИДАЛИТИ группу?");
+
+            ButtonType yesButton = new ButtonType("Так");
+            ButtonType cancelButton = new ButtonType("Відміна", ButtonBar.ButtonData.CANCEL_CLOSE);
+
+            alert.getButtonTypes().setAll(yesButton, cancelButton);
+            Optional<ButtonType> result = alert.showAndWait();
+            if (result.get() == yesButton) {
+                //TODO delete group
+            }
         });
 
         openGroup.setOnAction(event -> {
 
-            FindGroupStage findGroupStage = null;
+            JsonArray numbers = null;
             try {
-                findGroupStage = new FindGroupStage();
+                numbers = (JsonArray) Conn.getJson(Conn.MAIN_URL + Conn.GROUPS_SUFFIX + Conn.JSON_SUFFIX);
             } catch (IOException e) {
                 e.printStackTrace();
             }
 
-            if (findGroupStage != null)
-                findGroupStage.showAndWait();
+
+            List<Integer> list = new ArrayList<>();
+            for (JsonElement element : numbers) {
+                list.add(element.getAsJsonObject().get("number").getAsInt());
+            }
+            ChoiceDialog<Integer> dialog = new ChoiceDialog<>(list.get(0), list);
+            dialog.setTitle("Відкриття групи");
+            dialog.setHeaderText(null);
+            dialog.setContentText("Виберіть группу:");
+            Optional<Integer> value = dialog.showAndWait();
+            Integer groupNumber = null;
+            if (value.isPresent()) {
+                groupNumber = value.get();
+            }
+            if (groupNumber != null) {
+                if (mainTable.getGroup() != null) {
+                    Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+                    alert.setTitle("Увага!");
+                    alert.setHeaderText(null);
+                    alert.setContentText("Чи зберегти теперішню группу?");
+
+                    ButtonType yesButton = new ButtonType("Так");
+                    ButtonType noButton = new ButtonType("Ні");
+                    ButtonType cancelButton = new ButtonType("Відміна", ButtonBar.ButtonData.CANCEL_CLOSE);
+
+                    alert.getButtonTypes().setAll(yesButton, noButton, cancelButton);
+
+                    Optional<ButtonType> result = alert.showAndWait();
+                    if (result.get() == yesButton) {
+                        //TODO save old group and open new
+                    } else if (result.get() == noButton) {
+                        try {
+                            mainTable.initGroup(groupNumber);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                }else try {
+                    mainTable.initGroup(groupNumber);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
 
             //TODO add getting subjects list from server and choosing logic
 
         });
 
         saveGroup.setOnAction(event -> {
-            try {
-                Connection.saveGroupToServer(mainTable.getGroup().getStaticValuesJSON());
-                //TODO add saving variable values
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            //TODO add saving variable values
         });
 
         createSubject.setOnAction(event -> {
@@ -116,7 +198,7 @@ public class MainScene extends Scene {
             subjectCreationStage.initOwner(getWindow());
             subjectCreationStage.showAndWait();
             Subject newSubject = subjectCreationStage.getNewSubject();
-            if (newSubject != null){
+            if (newSubject != null) {
                 subject.setProfessorInitials(newSubject.getProfessorInitials());
                 subject.setSubjectName(newSubject.getSubjectName());
                 subject.setChangedHoursValue(newSubject.getChangedHoursValue());
@@ -156,5 +238,14 @@ public class MainScene extends Scene {
             int size = mainTable.getColumns().size();
             if (size > 6) mainTable.getColumns().remove(size - 2, size);
         });
+    }
+
+    public void saveGroup(Group group){
+        for (Subject subject : group.getSubjects()) {
+            if (subject.getId() == null){
+
+//                Conn.sendPUT(Conn.MAIN_URL + Conn.SUBJECTS_SUFFIX, );
+            }
+        }
     }
 }

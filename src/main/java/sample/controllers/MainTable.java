@@ -13,9 +13,6 @@ import sample.entities.Group;
 import sample.entities.Subject;
 
 import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -24,7 +21,7 @@ import java.util.*;
 public class MainTable extends TableView<Subject> {
 
 
-    private Group group = new Group(13);
+    private Group group;
 
     public MainTable() {
 
@@ -94,16 +91,20 @@ public class MainTable extends TableView<Subject> {
     }
 
     public Group getGroup() {
-        if (group == null) throw new NullPointerException();
         return group;
+    }
+
+    public void createGroup(Integer number) throws IOException {
+        Conn.createGroup(number);
+        initGroup(number);
     }
 
     public void initGroup(Integer number) throws IOException {
 
-        JsonArray jsonSubjects =
-                Connection.getJson(Connection.MAIN_URL + Connection.SUBJECTS_UPLOAD_SUFFIX + number + Connection.JSON_SUFFIX);
-
         group = new Group(number);
+
+        JsonArray jsonSubjects =
+                (JsonArray) Conn.getJson(Conn.MAIN_URL + Conn.SUBJECT_GROUP_SUFFIX + number + "/" + Conn.JSON_SUFFIX);
 
         for (JsonElement jsonSubject : jsonSubjects) {
 
@@ -111,21 +112,20 @@ public class MainTable extends TableView<Subject> {
             String subjectName = jsonObject.get("name").getAsString();
             String professorsInitials = jsonObject.get("professor").getAsString();
             Integer hoursQuoteValue = jsonObject.get("SEMESTERS_HOUR").getAsInt();
-            Integer changesHoursValue = jsonObject.get("changes").getAsInt();
             Integer weeklyHours = jsonObject.get("week_load").getAsInt();
             Integer subjectId = jsonObject.get("id").getAsInt();
 
             Subject subject = new Subject(subjectName, professorsInitials, hoursQuoteValue);
             subject.setWeeklyHoursValue(weeklyHours);
-            subject.setChangedHoursValue(changesHoursValue);
+            subject.setId(subjectId);
 
             JsonArray jsonAdditionalValues =
-                    Connection.getJson(Connection.MAIN_URL + Connection.CHANGES_SUFFIX + subjectId + Connection.JSON_SUFFIX);
+                    (JsonArray) Conn.getJson(Conn.MAIN_URL + Conn.DATE_FOR_SUBJECT_SUFFIX + subjectId + "/" + Conn.JSON_SUFFIX);
 
             for (JsonElement jsonElement : jsonAdditionalValues) {
                 JsonObject jsonValue = jsonElement.getAsJsonObject();
                 String sDate = jsonValue.get("for_date").getAsString();
-                DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+                DateFormat df = new SimpleDateFormat("dd-MM-yyyy");
                 Date date = null;
                 try {
                     date = df.parse(sDate);
@@ -136,12 +136,11 @@ public class MainTable extends TableView<Subject> {
                 Integer value = jsonValue.get("completed").getAsInt();
                 subject.addCompletedHours(date, value);
             }
-
             group.addSubject(subject);
         }
 
-        if (group != null) fillCompletedHoursColumns();
         if (group != null) distributeGroupToTable();
+        if (group != null) fillCompletedHoursColumns();
 
     }
 
@@ -172,20 +171,18 @@ public class MainTable extends TableView<Subject> {
         if (group.getSubjects().size() == 0) return;
 
         dates = group.getSubjects().get(0).getDates();
+        System.out.println(dates.size());
 
-        for (int i = 0; i < dates.size(); i++) {
-            //getting date from array
-            Date date = ((Date) dates.toArray()[i]);
-
+        for (Date date : dates) {
             addCompletedHoursColumns(date);
         }
     }
 
     public void addCompletedHoursColumns(Date date) {
         if (group == null) return;
-        for (Subject subject : group.getSubjects()) {
-            subject.addCompletedHours(date, subject.getWeeklyHoursValue());
-        }
+//        for (Subject subject : group.getSubjects()) {
+//            subject.addCompletedHours(date, subject.getWeeklyHoursValue());
+//        }
 
         String sDate = new SimpleDateFormat("dd.MM.yyyy").format(date);
         TableColumn<Subject, Integer> completedColumn = new TableColumn<>("В " + sDate);
@@ -208,8 +205,10 @@ public class MainTable extends TableView<Subject> {
         completedColumn.setOnEditCommit(event -> {
             Integer value = event.getNewValue();
             int pos = event.getTablePosition().getColumn();
-            event.getTableView().getItems().get(
-                    event.getTablePosition().getRow()).setCompletedHours(value, (pos - 6)/2);
+            Subject subject = event.getTableView().getItems().get(
+                    event.getTablePosition().getRow());
+            subject.setCompletedHours(value, (pos - 6) / 2);
+            subject.setVarValChanged(true);
 
             this.refresh();
         });

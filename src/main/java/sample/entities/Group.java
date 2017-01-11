@@ -46,14 +46,27 @@ public class Group {
         return group;
     }
 
-    public JsonArray getJson() {
-        //TODO fix this json method
+    public JsonArray getJsonToCrate() {
         JsonArray group = new JsonArray();
-        JsonObject number = new JsonObject();
-        number.add("group", new JsonPrimitive(getGroupNumber()));
-        group.add(number);
-        for (Subject subject : getSubjects())
-            group.add(subject.getVarValuesJSON());
+        for (Subject subject : getSubjects()) {
+            if (subject.getId() == null){
+                JsonObject subjectJson = subject.getStaticValuesJSON();
+                subjectJson.add("group", new JsonPrimitive(getGroupNumber()));
+                group.add(subjectJson);
+            }
+        }
+        return group;
+    }
+
+    public JsonArray getJsonStaticToUpdate(){
+        JsonArray group = new JsonArray();
+        for (Subject subject : getSubjects()) {
+            if (subject.getId() != null && subject.isStaticValChanged()){
+                JsonObject subjectJson = subject.getStaticValuesJSON();
+                subjectJson.add("group", new JsonPrimitive(getGroupNumber()));
+                group.add(subjectJson);
+            }
+        }
         return group;
     }
 }

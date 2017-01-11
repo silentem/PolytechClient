@@ -16,6 +16,7 @@ import java.util.List;
  */
 public class Subject {
 
+    private Integer id;
     private SimpleStringProperty subjectName;
     private SimpleStringProperty professorInitials;
     private SimpleIntegerProperty changedHoursValue;
@@ -24,6 +25,8 @@ public class Subject {
     private List<Date> dates;
     private List<Integer> completedHours;
     private List<Integer> leftToDoHours;
+    private boolean isStaticValChanged;
+    private boolean isVarValChanged;
 
     public Subject(String subjectName, String professorInitials, int hoursQuoteValue) {
         this.setSubjectName(subjectName);
@@ -34,6 +37,14 @@ public class Subject {
         dates = new ArrayList<>();
         completedHours = new ArrayList<>();
         leftToDoHours = new ArrayList<>();
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
     }
 
     public String getSubjectName() {
@@ -78,6 +89,22 @@ public class Subject {
 
     public void setHoursQuoteValue(int hoursQuoteValue) {
         this.hoursQuoteValue = new SimpleIntegerProperty(hoursQuoteValue);
+    }
+
+    public boolean isStaticValChanged() {
+        return isStaticValChanged;
+    }
+
+    public void setStaticValChanged(boolean staticValChanged) {
+        isStaticValChanged = staticValChanged;
+    }
+
+    public boolean isVarValChanged() {
+        return isVarValChanged;
+    }
+
+    public void setVarValChanged(boolean varValChanged) {
+        isVarValChanged = varValChanged;
     }
 
     public List<Date> getDates() {
@@ -132,7 +159,6 @@ public class Subject {
         subjectJson.add("professor", new JsonPrimitive(getProfessorInitials()));
         subjectJson.add("SEMESTERS_HOUR", new JsonPrimitive(getHoursQuoteValue()));
         subjectJson.add("week_load", new JsonPrimitive(getWeeklyHoursValue()));
-        subjectJson.add("changes", new JsonPrimitive(getChangedHoursValue()));
         return subjectJson;
     }
 
@@ -140,9 +166,11 @@ public class Subject {
         JsonArray subjectJson = new JsonArray();
         for (int i = 0; i < getDates().size(); i++) {
             JsonObject json = new JsonObject();
+            json.add("id", new JsonPrimitive(getId()));
             json.add("for_date", new JsonPrimitive(getDates().get(i).toString()));
             json.add("completed", new JsonPrimitive(getCompletedHours().get(i)));
             json.add("left", new JsonPrimitive(getLeftToDoHours().get(i)));
+            json.add("changes", new JsonPrimitive(getChangedHoursValue()));
             subjectJson.add(json);
         }
         return subjectJson;
