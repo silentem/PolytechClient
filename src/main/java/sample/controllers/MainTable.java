@@ -99,7 +99,7 @@ public class MainTable extends TableView<Subject> {
         group = new Group(number);
 
         JsonArray jsonSubjects =
-                (JsonArray) Conn.getJson(Conn.MAIN_URL + Conn.SUBJECT_GROUP_SUFFIX + number + "/" + Conn.JSON_SUFFIX);
+                (JsonArray) Conn.getJson(Conn.MAIN_URL + Conn.SUBJECT_GROUP_SUFFIX + number + "/");
 
         for (JsonElement jsonSubject : jsonSubjects) {
 
@@ -115,7 +115,7 @@ public class MainTable extends TableView<Subject> {
             subject.setId(subjectId);
 
             JsonArray jsonAdditionalValues =
-                    (JsonArray) Conn.getJson(Conn.MAIN_URL + Conn.DATE_FOR_SUBJECT_SUFFIX + subjectId + "/" + Conn.JSON_SUFFIX);
+                    (JsonArray) Conn.getJson(Conn.MAIN_URL + Conn.DATE_FOR_SUBJECT_SUFFIX + subjectId + "/");
 
             for (JsonElement jsonElement : jsonAdditionalValues) {
                 JsonObject jsonValue = jsonElement.getAsJsonObject();

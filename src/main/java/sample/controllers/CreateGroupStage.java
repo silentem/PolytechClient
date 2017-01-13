@@ -1,5 +1,9 @@
 package sample.controllers;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -8,10 +12,7 @@ import javafx.geometry.Insets;
 import javafx.scene.Group;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.layout.GridPane;
@@ -21,15 +22,17 @@ import javafx.util.StringConverter;
 import sample.entities.Subject;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Function;
 
-public class CreateGroupStage extends Stage{
+public class CreateGroupStage extends Stage {
 
-    private int groupNumber;
+    private Integer groupNumber;
 
-    public CreateGroupStage(){
+    public CreateGroupStage() {
 
-        TextField groupNumber = new TextField();
+        TextField groupNumberField = new TextField();
         TableView<Subject> subjectTable = new TableView<>();
         subjectTable.getColumns().add(column("Назва предмету", "subjectName"));
         subjectTable.getColumns().add(column("ПІП викладача", "professorInitials"));
@@ -48,13 +51,42 @@ public class CreateGroupStage extends Stage{
             items.add(subject);
         });
 
-        createGroup.setOnAction(e -> {
+        createGroup.setOnAction(event -> {
             try {
-                Conn.createGroup(Integer.parseInt(groupNumber.getText()), items);
-            } catch (IOException e1) {
-                e1.printStackTrace();
+                JsonArray numbers = (JsonArray) Conn.getJson(Conn.MAIN_URL + Conn.GROUPS_SUFFIX);
+                List numList = new ArrayList();
+                for (JsonElement elem : numbers)
+                    numList.add(elem.getAsJsonObject().get("number").getAsInt());
+
+                int number = Integer.parseInt(groupNumberField.getText());
+                if (numList.contains(number)){
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setTitle("Помилка!");
+                    alert.setHeaderText(null);
+                    alert.setContentText("Така група вже існує!");
+
+                    ButtonType cancelButton = new ButtonType("ОК", ButtonBar.ButtonData.CANCEL_CLOSE);
+
+                    alert.getButtonTypes().setAll(cancelButton);
+                    alert.showAndWait();
+                }else {
+                    groupNumber = number;
+                    Conn.createGroup(number, items);
+                    close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }catch (NumberFormatException e){
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setTitle("Помилка!");
+                alert.setHeaderText(null);
+                alert.setContentText("Ви не правильно ввели числові данні!");
+
+                ButtonType cancelButton = new ButtonType("ОК", ButtonBar.ButtonData.CANCEL_CLOSE);
+
+                alert.getButtonTypes().setAll(cancelButton);
+                alert.showAndWait();
             }
-            close();
         });
 
         GridPane grid = new GridPane();
@@ -62,7 +94,7 @@ public class CreateGroupStage extends Stage{
         grid.setVgap(10);
         grid.setPadding(new Insets(20, 150, 10, 10));
 
-        grid.add(groupNumber, 0, 0);
+        grid.add(groupNumberField, 0, 0);
         grid.add(subjectTable, 0, 1);
         grid.add(addSubject, 0, 2);
         grid.add(createGroup, 1, 2);
@@ -75,7 +107,7 @@ public class CreateGroupStage extends Stage{
         this.setResizable(false);
     }
 
-    private static <S, T> TableColumn<S, T> column(String title,
+    private  <S, T> TableColumn<S, T> column(String title,
                                                    String property) {
 
         TableColumn<S, T> col = new TableColumn<>(title);

@@ -3,19 +3,19 @@ package sample.controllers;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import sample.entities.Subject;
 
 import java.io.IOException;
+import java.util.Optional;
 
 public class SubjectCreationStage extends Stage {
 
     private Subject resultSubject;
 
-    public SubjectCreationStage(Subject subject){
+    public SubjectCreationStage(Subject subject) {
         Parent root = null;
         try {
             root = FXMLLoader.load(getClass().getResource("/fxml/subjectCreationStage.fxml"));
@@ -51,7 +51,7 @@ public class SubjectCreationStage extends Stage {
         });
         this.setScene(scene);
         this.initModality(Modality.APPLICATION_MODAL);
-        this.setTitle("Створення предмета");
+        this.setTitle("Зміна предмета");
         this.centerOnScreen();
         this.setResizable(false);
     }
@@ -75,29 +75,51 @@ public class SubjectCreationStage extends Stage {
         Button createButton = ((Button) scene.lookup("#create"));
 
         createButton.setOnAction(event -> {
+                    if (subjectNameField.getText().equals("") ||
+                            professorPIPField.getText().equals("") ||
+                            totalHoursToFinishField.getText().equals("") ||
+                            weeklyHoursField.getText().equals("")) {
 
-            String subjectName = subjectNameField.getText();
-            String professorName = professorPIPField.getText();
+                        Alert alert = new Alert(Alert.AlertType.ERROR);
+                        alert.setTitle("Помилка!");
+                        alert.setHeaderText(null);
+                        alert.setContentText("Всі поля повинні бути заповнені!");
 
-            int totalHoursToFinish = Integer.parseInt(totalHoursToFinishField.getText());
-            int weeklyHours = Integer.parseInt(weeklyHoursField.getText());
+                        ButtonType cancelButton = new ButtonType("ОК", ButtonBar.ButtonData.CANCEL_CLOSE);
 
-            resultSubject = new Subject(subjectName, professorName, totalHoursToFinish);
-            resultSubject.setWeeklyHoursValue(weeklyHours);
+                        alert.getButtonTypes().setAll(cancelButton);
+                        alert.showAndWait();
+                    } else {
+                        String subjectName = subjectNameField.getText();
+                        String professorName = professorPIPField.getText();
 
-            close();
+                        int totalHoursToFinish = 0;
+                        int weeklyHours = 0;
+                        try {
+                            totalHoursToFinish = Integer.parseInt(totalHoursToFinishField.getText());
+                            weeklyHours = Integer.parseInt(weeklyHoursField.getText());
+                            resultSubject = new Subject(subjectName, professorName, totalHoursToFinish);
+                            resultSubject.setWeeklyHoursValue(weeklyHours);
+                            close();
+                        } catch (NumberFormatException e) {
+                            Alert alert = new Alert(Alert.AlertType.ERROR);
+                            alert.setTitle("Помилка!");
+                            alert.setHeaderText(null);
+                            alert.setContentText("Ви не правильно ввели числові данні!");
 
-        });
+                            ButtonType cancelButton = new ButtonType("ОК", ButtonBar.ButtonData.CANCEL_CLOSE);
 
+                            alert.getButtonTypes().setAll(cancelButton);
+                            alert.showAndWait();
+                        }
+                    }
+                }
+        );
         this.setScene(scene);
         this.initModality(Modality.APPLICATION_MODAL);
         this.setTitle("Створення предмета");
         this.centerOnScreen();
         this.setResizable(false);
-    }
-
-    private void init(){
-
     }
 
     public Subject getNewSubject() {

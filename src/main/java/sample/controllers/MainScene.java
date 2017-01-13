@@ -36,21 +36,16 @@ public class MainScene extends Scene {
         MenuItem createGroup = new MenuItem("Створити групу");
         MenuItem deleteGroup = new MenuItem("Видалити группу");
         MenuItem openGroup = new MenuItem("Відкрити группу");
+        MenuItem changeGroup = new MenuItem("Змінити группу");
         MenuItem saveGroup = new MenuItem("Зберегти группу");
-        groupMenu.getItems().addAll(createGroup, deleteGroup, openGroup, saveGroup);
-
-        Menu subjectMenu = new Menu("Предмет");
-        MenuItem createSubject = new MenuItem("Створити предмет");
-        MenuItem deleteSubject = new MenuItem("Видалиит предмет");
-        MenuItem changeSubject = new MenuItem("Змінити предмет");
-        subjectMenu.getItems().addAll(createSubject, deleteSubject, changeSubject);
+        groupMenu.getItems().addAll(createGroup, deleteGroup, openGroup, changeGroup, saveGroup);
 
         Menu columnMenu = new Menu("Стовпець");
         MenuItem addColumn = new MenuItem("Додати стовпець");
         MenuItem deleteColumn = new MenuItem("Видалити стовпець");
         columnMenu.getItems().addAll(addColumn, deleteColumn);
 
-        menuBar.getMenus().addAll(groupMenu, subjectMenu, columnMenu);
+        menuBar.getMenus().addAll(groupMenu, columnMenu);
 
         mainTable.setEditable(true);
 
@@ -64,45 +59,12 @@ public class MainScene extends Scene {
             CreateGroupStage groupCreation = new CreateGroupStage();
             groupCreation.initOwner(getWindow());
             groupCreation.showAndWait();
-
-//            Optional<Integer> resultNumber = dialog.showAndWait();
-//            resultNumber.ifPresent(number -> {
-//                if (number != null) {
-//                    System.out.println("here1");
-//                    if (mainTable.getGroup() != null) {
-//                        System.out.println("here");
-//                        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-//                        alert.setTitle("Увага!");
-//                        alert.setHeaderText(null);
-//                        alert.setContentText("Чи зберегти теперішню группу?");
-//
-//                        ButtonType yesButton = new ButtonType("Так");
-//                        ButtonType noButton = new ButtonType("Ні");
-//                        ButtonType cancelButton = new ButtonType("Відміна", ButtonBar.ButtonData.CANCEL_CLOSE);
-//
-//                        alert.getButtonTypes().setAll(yesButton, noButton, cancelButton);
-//
-//                        Optional<ButtonType> result = alert.showAndWait();
-//                        if (result.get() == yesButton) {
-//                            //TODO save old group and create new
-//                        } else if (result.get() == noButton) {
-//                            try {
-//                                mainTable.createGroup(number);
-//                            } catch (IOException e) {
-//                                e.printStackTrace();
-//                            }
-//                        }
-//
-//                    }
-//                    else try {
-//                        mainTable.createGroup(number);
-//                    } catch (IOException e) {
-//                        e.printStackTrace();
-//                    }
-//                }
-//            });
-
-
+            try {
+                if (groupCreation.getGroupNumber() != null)
+                    mainTable.initGroup(groupCreation.getGroupNumber());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             //TODO create method to create group
         });
 
@@ -126,7 +88,7 @@ public class MainScene extends Scene {
 
             JsonArray numbers = null;
             try {
-                numbers = (JsonArray) Conn.getJson(Conn.MAIN_URL + Conn.GROUPS_SUFFIX + Conn.JSON_SUFFIX);
+                numbers = (JsonArray) Conn.getJson(Conn.MAIN_URL + Conn.GROUPS_SUFFIX);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -169,7 +131,7 @@ public class MainScene extends Scene {
                         }
                     }
 
-                }else try {
+                } else try {
                     mainTable.initGroup(groupNumber);
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -180,44 +142,12 @@ public class MainScene extends Scene {
 
         });
 
+        changeGroup.setOnAction(event -> {
+
+        });
+
         saveGroup.setOnAction(event -> {
             //TODO add saving variable values
-        });
-
-        createSubject.setOnAction(event -> {
-            SubjectCreationStage subjectCreationStage = new SubjectCreationStage();
-            subjectCreationStage.initOwner(getWindow());
-            subjectCreationStage.showAndWait();
-            Subject subject = subjectCreationStage.getNewSubject();
-            if (subject != null) {
-                if (mainTable.getGroup().getSubjects().size() != 0) {
-                    Subject exampleSubject = mainTable.getGroup().getSubjects().get(0);
-                    for (int i = 0; i < exampleSubject.getCompletedHours().size(); i++) {
-                        subject.addCompletedHours(exampleSubject.getDates().get(i), subject.getWeeklyHoursValue());
-                    }
-                }
-                mainTable.addSubjectToGroup(subject);
-            }
-        });
-        deleteSubject.setOnAction(event -> {
-            Integer index = mainTable.getFocusModel().getFocusedIndex();
-            mainTable.deleteSubjectFromGroup(index);
-        });
-
-        changeSubject.setOnAction(event -> {
-            Subject subject = mainTable.getSelectionModel().selectedItemProperty().get();
-            SubjectCreationStage subjectCreationStage = new SubjectCreationStage(subject);
-            subjectCreationStage.initOwner(getWindow());
-            subjectCreationStage.showAndWait();
-            Subject newSubject = subjectCreationStage.getNewSubject();
-            if (newSubject != null) {
-                subject.setProfessorInitials(newSubject.getProfessorInitials());
-                subject.setSubjectName(newSubject.getSubjectName());
-                subject.setChangedHoursValue(newSubject.getChangedHoursValue());
-                subject.setHoursQuoteValue(newSubject.getHoursQuoteValue());
-                subject.setWeeklyHoursValue(newSubject.getWeeklyHoursValue());
-                mainTable.refresh();
-            }
         });
 
         addColumn.setOnAction(event -> {
@@ -253,11 +183,11 @@ public class MainScene extends Scene {
         });
     }
 
-    public void saveGroup(Group group){
+    public void saveGroup(Group group) {
         for (Subject subject : group.getSubjects()) {
-            if (subject.getId() == null){
+            if (subject.getId() == null) {
 
-//                Conn.sendPUT(Conn.MAIN_URL + Conn.SUBJECTS_SUFFIX, );
+//                Conn.sendPOST(Conn.MAIN_URL + Conn.SUBJECTS_SUFFIX, );
             }
         }
     }
