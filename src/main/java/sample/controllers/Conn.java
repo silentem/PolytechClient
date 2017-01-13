@@ -1,6 +1,8 @@
 package sample.controllers;
 
 import com.google.gson.*;
+import javafx.collections.ObservableList;
+import sample.entities.Subject;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,7 +15,9 @@ import java.util.List;
 
 public class Conn {
 
-    public static final String MAIN_URL = "http://c8622abe.ngrok.io";
+    public static JsonObject groupJson = new JsonObject();
+
+    public static final String MAIN_URL = "http://d07ff546.ngrok.io";
     public static final String GROUPS_SUFFIX = "/Groups/";
     public static final String SUBJECTS_SUFFIX = "/Subjects/";
     public static final String COMPLETE_DATE_SUFFIX = "/CompleteDate/";
@@ -29,7 +33,7 @@ public class Conn {
     public static final String DATE_FOR_DATE_SUFFIX = "/date/for_date/";
     public static final String JSON_SUFFIX = "?format=json";
 
-    public static void createGroup(int number) throws IOException {
+    public static void createGroup(int number, ObservableList<Subject> subjects) throws IOException {
         URL url = new URL(Conn.MAIN_URL + Conn.GROUPS_SUFFIX);
         HttpURLConnection con = (HttpURLConnection) url.openConnection();
         con.setDoOutput(true);
@@ -41,6 +45,16 @@ public class Conn {
         OutputStreamWriter wr = new OutputStreamWriter(con.getOutputStream());
         JsonObject json = new JsonObject();
         json.add("number", new JsonPrimitive(number));
+        JsonArray arr = new JsonArray();
+        for (Subject s : subjects) {
+            JsonObject obj = new JsonObject();
+            obj.add("name", new JsonPrimitive(s.getSubjectName()));
+            obj.add("professor", new JsonPrimitive(s.getProfessorInitials()));
+            obj.add("SEMESTERS_HOUR", new JsonPrimitive(s.getHoursQuoteValue()));
+            obj.add("week_load", new JsonPrimitive(s.getWeeklyHoursValue()));
+            arr.add(obj);
+        }
+        json.add("subjects", arr);
         wr.write(json.toString());
         wr.flush();
     }

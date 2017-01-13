@@ -61,36 +61,48 @@ public class MainScene extends Scene {
         ((javafx.scene.Group) getRoot()).getChildren().addAll(container);
 
         createGroup.setOnAction(event -> {
-            CreateGroupStage createGroupStage = new CreateGroupStage();
-            createGroupStage.initOwner(getWindow());
-            createGroupStage.showAndWait();
-            Integer groupNumber = createGroupStage.getGroupNumber();
-            if (groupNumber != null) {
-                if (mainTable.getGroup() != null) {
-                    Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-                    alert.setTitle("Увага!");
-                    alert.setHeaderText(null);
-                    alert.setContentText("Чи зберегти теперішню группу?");
+            CreateGroupStage groupCreation = new CreateGroupStage();
+            groupCreation.initOwner(getWindow());
+            groupCreation.showAndWait();
 
-                    ButtonType yesButton = new ButtonType("Так");
-                    ButtonType noButton = new ButtonType("Ні");
-                    ButtonType cancelButton = new ButtonType("Відміна", ButtonBar.ButtonData.CANCEL_CLOSE);
+//            Optional<Integer> resultNumber = dialog.showAndWait();
+//            resultNumber.ifPresent(number -> {
+//                if (number != null) {
+//                    System.out.println("here1");
+//                    if (mainTable.getGroup() != null) {
+//                        System.out.println("here");
+//                        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+//                        alert.setTitle("Увага!");
+//                        alert.setHeaderText(null);
+//                        alert.setContentText("Чи зберегти теперішню группу?");
+//
+//                        ButtonType yesButton = new ButtonType("Так");
+//                        ButtonType noButton = new ButtonType("Ні");
+//                        ButtonType cancelButton = new ButtonType("Відміна", ButtonBar.ButtonData.CANCEL_CLOSE);
+//
+//                        alert.getButtonTypes().setAll(yesButton, noButton, cancelButton);
+//
+//                        Optional<ButtonType> result = alert.showAndWait();
+//                        if (result.get() == yesButton) {
+//                            //TODO save old group and create new
+//                        } else if (result.get() == noButton) {
+//                            try {
+//                                mainTable.createGroup(number);
+//                            } catch (IOException e) {
+//                                e.printStackTrace();
+//                            }
+//                        }
+//
+//                    }
+//                    else try {
+//                        mainTable.createGroup(number);
+//                    } catch (IOException e) {
+//                        e.printStackTrace();
+//                    }
+//                }
+//            });
 
-                    alert.getButtonTypes().setAll(yesButton, noButton, cancelButton);
 
-                    Optional<ButtonType> result = alert.showAndWait();
-                    if (result.get() == yesButton) {
-                        //TODO save old group and create new
-                    } else if (result.get() == noButton) {
-                        try {
-                            mainTable.createGroup(groupNumber);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-
-                }
-            }
             //TODO create method to create group
         });
 
@@ -228,6 +240,7 @@ public class MainScene extends Scene {
                     e.printStackTrace();
                 }
 
+                mainTable.addCompletedHours(date);
                 mainTable.addCompletedHoursColumns(date);
 
                 //TODO realize creating editing title window on double click

@@ -94,11 +94,6 @@ public class MainTable extends TableView<Subject> {
         return group;
     }
 
-    public void createGroup(Integer number) throws IOException {
-        Conn.createGroup(number);
-        initGroup(number);
-    }
-
     public void initGroup(Integer number) throws IOException {
 
         group = new Group(number);
@@ -171,18 +166,20 @@ public class MainTable extends TableView<Subject> {
         if (group.getSubjects().size() == 0) return;
 
         dates = group.getSubjects().get(0).getDates();
-        System.out.println(dates.size());
 
         for (Date date : dates) {
             addCompletedHoursColumns(date);
         }
     }
 
+    public void addCompletedHours(Date date){
+        for (Subject subject : group.getSubjects()) {
+            subject.addCompletedHours(date, subject.getWeeklyHoursValue());
+        }
+    }
+
     public void addCompletedHoursColumns(Date date) {
         if (group == null) return;
-//        for (Subject subject : group.getSubjects()) {
-//            subject.addCompletedHours(date, subject.getWeeklyHoursValue());
-//        }
 
         String sDate = new SimpleDateFormat("dd.MM.yyyy").format(date);
         TableColumn<Subject, Integer> completedColumn = new TableColumn<>("В " + sDate);
@@ -222,7 +219,13 @@ public class MainTable extends TableView<Subject> {
             Subject subject = p.getValue();
 
             //getting dateKey for SSP()
-            Integer value = subject.getCompletedHours().get(last);
+
+            Integer value;
+            if (last == 0) {
+                subject.addCompletedHours(date, subject.getWeeklyHoursValue());
+                value = subject.getCompletedHours().get(0);
+            }
+            else value = subject.getCompletedHours().get(last);
 
             //returning property
             return new SimpleObjectProperty<>(value);
@@ -239,8 +242,9 @@ public class MainTable extends TableView<Subject> {
             //getting subject into variable
             Subject subject = param.getValue();
 
-            //getting dateKey for SSP()
             Integer value = subject.getLeftToDoHours().get(last);
+            //getting dateKey for SSP()
+
 
             //returning property
             return new SimpleObjectProperty<>(value);

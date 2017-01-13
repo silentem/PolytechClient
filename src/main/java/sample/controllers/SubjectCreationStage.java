@@ -28,8 +28,6 @@ public class SubjectCreationStage extends Stage {
         subjectNameField.setText(subject.getSubjectName());
         TextField professorPIPField = ((TextField) scene.lookup("#professorPIP"));
         professorPIPField.setText(subject.getProfessorInitials());
-        TextField changedHoursField = ((TextField) scene.lookup("#changedHoursValue"));
-        changedHoursField.setText(String.valueOf(subject.getChangedHoursValue()));
         TextField hoursQuoteField = ((TextField) scene.lookup("#hoursQuoteValue"));
         hoursQuoteField.setText(String.valueOf(subject.getHoursQuoteValue()));
         TextField weeklyHoursField = ((TextField) scene.lookup("#weeklyHoursValue"));
@@ -42,12 +40,10 @@ public class SubjectCreationStage extends Stage {
             String subjectName = subjectNameField.getText();
             String professorName = professorPIPField.getText();
 
-            int changedHours = Integer.parseInt(changedHoursField.getText());
             int totalHoursToFinish = Integer.parseInt(hoursQuoteField.getText());
             int weeklyHours = Integer.parseInt(weeklyHoursField.getText());
 
             resultSubject = new Subject(subjectName, professorName, totalHoursToFinish);
-            resultSubject.setChangedHoursValue(changedHours);
             resultSubject.setWeeklyHoursValue(weeklyHours);
 
             close();
@@ -73,7 +69,6 @@ public class SubjectCreationStage extends Stage {
 
         TextField subjectNameField = ((TextField) scene.lookup("#subjectName"));
         TextField professorPIPField = ((TextField) scene.lookup("#professorPIP"));
-        TextField changedHoursField = ((TextField) scene.lookup("#changedHoursValue"));
         TextField totalHoursToFinishField = ((TextField) scene.lookup("#hoursQuoteValue"));
         TextField weeklyHoursField = ((TextField) scene.lookup("#weeklyHoursValue"));
 
@@ -84,12 +79,10 @@ public class SubjectCreationStage extends Stage {
             String subjectName = subjectNameField.getText();
             String professorName = professorPIPField.getText();
 
-            int changedHours = Integer.parseInt(changedHoursField.getText());
             int totalHoursToFinish = Integer.parseInt(totalHoursToFinishField.getText());
             int weeklyHours = Integer.parseInt(weeklyHoursField.getText());
 
             resultSubject = new Subject(subjectName, professorName, totalHoursToFinish);
-            resultSubject.setChangedHoursValue(changedHours);
             resultSubject.setWeeklyHoursValue(weeklyHours);
 
             close();
