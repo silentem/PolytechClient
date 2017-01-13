@@ -12,11 +12,11 @@ public class Conn {
 
     public static JsonObject groupJson = new JsonObject();
 
-    public static final String MAIN_URL = "http://a7f0c45f.ngrok.io";
+    public static final String MAIN_URL = "http://abe39b42.ngrok.io";
     public static final String GROUPS_SUFFIX = "/Groups/";
     public static final String CREATE_GROUP_SUFFIX = "/create/group/";
     public static final String SUBJECTS_SUFFIX = "/Subjects/";
-    public static final String COMPLETE_DATE_SUFFIX = "/CompleteDate/";
+    public static final String DATE_SUFFIX = "/Date/";
     public static final String GROUP_UPDATE_SUFFIX = "/group/update/";
     public static final String GROUP_DESTROY_SUFFIX = "/group/destroy/";
     public static final String SUBJECT_UPDATE_SUFFIX = "/subject/update/";
@@ -41,7 +41,7 @@ public class Conn {
             arr.add(obj);
         }
         json.add("subjects", arr);
-        sendPOST(Conn.MAIN_URL + Conn.CREATE_GROUP_SUFFIX, json);
+        send(Conn.MAIN_URL + Conn.CREATE_GROUP_SUFFIX, json, "POST");
     }
 
     public static JsonElement getJson(String sUrl) throws IOException {
@@ -62,19 +62,22 @@ public class Conn {
         return root.getAsJsonArray();
     }
 
-    private static void sendPOST(String sUrl, JsonElement json) {
+    public static void send(String sUrl, JsonElement json, String method) {
         try {
             URL url = new URL(sUrl);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setDoOutput(true);
-            conn.setRequestMethod("POST");
+            conn.setRequestMethod(method);
             conn.setRequestProperty("Content-Type", "application/json");
 
-            String input = json.toString();
 
-            OutputStream os = conn.getOutputStream();
-            os.write(input.getBytes());
-            os.flush();
+            if (json != null) {
+                String input = json.toString();
+                System.out.println(json);
+                OutputStream os = conn.getOutputStream();
+                os.write(input.getBytes());
+                os.flush();
+            }
             conn.getInputStream();
             conn.disconnect();
 

@@ -2,6 +2,8 @@ package sample.controllers;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -13,20 +15,19 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public class MainScene extends Scene {
 
     public MainScene(Parent root) {
         super(root);
 
+        List<JsonArray> jsonToCreate = new ArrayList<>();
+        Map<Integer, JsonObject> jsonToDelete = new HashMap<>();
+
         MainTable mainTable = new MainTable();
 
         //TODO summary fields, table size, css
-        //TODO create attention windows
         //TODO rework some dialog windows
         //TODO CLEAR CODE
 
@@ -65,7 +66,6 @@ public class MainScene extends Scene {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            //TODO create method to create group
         });
 
         deleteGroup.setOnAction(event -> {
@@ -143,11 +143,42 @@ public class MainScene extends Scene {
         });
 
         changeGroup.setOnAction(event -> {
+            if(mainTable.getGroup() != null){
+                ChangeGroupStage stage = new ChangeGroupStage(mainTable.getGroup());
+                stage.initOwner(getWindow());
+                stage.showAndWait();
+                try {
+                    mainTable.initGroup(stage.getGroupNum());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
 
+            }else {
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setTitle("Помилка!");
+                alert.setHeaderText(null);
+                alert.setContentText("Ви не відкрили групу!");
+
+                ButtonType cancelButton = new ButtonType("ОК", ButtonBar.ButtonData.CANCEL_CLOSE);
+
+                alert.getButtonTypes().setAll(cancelButton);
+                alert.showAndWait();
+            }
         });
 
         saveGroup.setOnAction(event -> {
-            //TODO add saving variable values
+            for (JsonArray arr : jsonToCreate) {
+                Conn.send(Conn.MAIN_URL + Conn.DATE_SUFFIX, arr, "POST");
+            }
+            jsonToCreate.clear();
+            jsonToDelete.forEach((integer, jsonObject) -> {
+                Conn.send(Conn.MAIN_URL + Conn.DATE_DESTROY_SUFFIX + integer + "/", jsonObject, "DELETE");
+            });
+            jsonToDelete.clear();
+            mainTable.getCache().forEach((integer, jsonObject) -> {
+                Conn.send(Conn.MAIN_URL + Conn.DATE_UPDATE_SUFFIX + integer + "/", jsonObject, "PUT");
+            });
+            mainTable.getCache().clear();
         });
 
         addColumn.setOnAction(event -> {
@@ -170,25 +201,49 @@ public class MainScene extends Scene {
                     e.printStackTrace();
                 }
 
+
+
                 mainTable.addCompletedHours(date);
                 mainTable.addCompletedHoursColumns(date);
+                JsonArray array = new JsonArray();
+                for (Subject s : mainTable.getGroup().getSubjects()) {
+                    JsonObject obj = new JsonObject();
+                    int last = s.getCompletedHours().size() - 1;
+                    String lastDate = new SimpleDateFormat("yyyy-MM-dd").format(s.getDates().get(last));
+                    obj.add("for_date", new JsonPrimitive(lastDate));
+                    obj.add("completed", new JsonPrimitive(s.getCompletedHours().get(last)));
+                    obj.add("changes", new JsonPrimitive(s.getChangedHoursValue()));
+                    obj.add("subject", new JsonPrimitive(s.getId()));
+                    array.add(obj);
+                }
+                jsonToCreate.add(array);
 
                 //TODO realize creating editing title window on double click
             }
         });
 
         deleteColumn.setOnAction(event -> {
-            int size = mainTable.getColumns().size();
-            if (size > 6) mainTable.getColumns().remove(size - 2, size);
-        });
-    }
-
-    public void saveGroup(Group group) {
-        for (Subject subject : group.getSubjects()) {
-            if (subject.getId() == null) {
-
-//                Conn.sendPOST(Conn.MAIN_URL + Conn.SUBJECTS_SUFFIX, );
+            if (jsonToCreate.size() != 0) jsonToCreate.remove(jsonToCreate.size() - 1);
+            else {
+                for (Subject s : mainTable.getGroup().getSubjects()) {
+                    JsonObject obj = new JsonObject();
+                    int last = s.getCompletedHours().size() - 1;
+                    String lastDate = new SimpleDateFormat("yyyy-MM-dd").format(s.getDates().get(last));
+                    obj.add("for_date", new JsonPrimitive(lastDate));
+                    obj.add("completed", new JsonPrimitive(s.getCompletedHours().get(last)));
+                    obj.add("changes", new JsonPrimitive(s.getChangedHoursValue()));
+                    obj.add("subject", new JsonPrimitive(s.getId()));
+                    jsonToDelete.put(s.getId(), obj);
+                }
             }
-        }
+            int size = mainTable.getColumns().size();
+            if (size > 6) {
+                mainTable.getColumns().remove(size - 2, size);
+                for (Subject s : mainTable.getGroup().getSubjects()) {
+                    s.removeCompletedHours();
+                }
+            }
+
+        });
     }
 }

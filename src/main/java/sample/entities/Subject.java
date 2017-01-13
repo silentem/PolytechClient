@@ -176,4 +176,9 @@ public class Subject {
         return subjectJson;
     }
 
+    public void removeCompletedHours() {
+        getDates().remove(getDates().size() - 1);
+        getCompletedHours().remove(getCompletedHours().size() - 1);
+        getLeftToDoHours().remove(getLeftToDoHours().size() - 1);
+    }
 }
