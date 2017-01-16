@@ -8,7 +8,6 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
-import sample.entities.Group;
 import sample.entities.Subject;
 
 import java.io.IOException;
@@ -19,13 +18,16 @@ import java.util.*;
 
 public class MainScene extends Scene {
 
+    private MainTable mainTable;
+    private List<Integer> jsonToDelete;
+
     public MainScene(Parent root) {
         super(root);
 
-        List<JsonArray> jsonToCreate = new ArrayList<>();
-        Map<Integer, JsonObject> jsonToDelete = new HashMap<>();
 
-        MainTable mainTable = new MainTable();
+        jsonToDelete = new ArrayList<>();
+
+        mainTable = new MainTable();
 
         //TODO summary fields, table size, css
         //TODO rework some dialog windows
@@ -69,18 +71,20 @@ public class MainScene extends Scene {
         });
 
         deleteGroup.setOnAction(event -> {
-            Alert alert = new Alert(Alert.AlertType.WARNING);
-            alert.setTitle("Увага!");
-            alert.setHeaderText(null);
-            alert.setContentText("Чи ви дійсно бажаєте ВИДАЛИТИ группу?");
+            if (mainTable.getGroup() != null) {
+                Alert alert = new Alert(Alert.AlertType.WARNING);
+                alert.setTitle("Увага!");
+                alert.setHeaderText(null);
+                alert.setContentText("Чи ви дійсно бажаєте ВИДАЛИТИ группу?");
 
-            ButtonType yesButton = new ButtonType("Так");
-            ButtonType cancelButton = new ButtonType("Відміна", ButtonBar.ButtonData.CANCEL_CLOSE);
+                ButtonType yesButton = new ButtonType("Так");
+                ButtonType cancelButton = new ButtonType("Відміна", ButtonBar.ButtonData.CANCEL_CLOSE);
 
-            alert.getButtonTypes().setAll(yesButton, cancelButton);
-            Optional<ButtonType> result = alert.showAndWait();
-            if (result.get() == yesButton) {
-                //TODO delete group
+                alert.getButtonTypes().setAll(yesButton, cancelButton);
+                Optional<ButtonType> result = alert.showAndWait();
+                if (result.get() == yesButton) {
+                    Conn.send(Conn.MAIN_URL + Conn.GROUP_DESTROY_SUFFIX + mainTable.getGroup().getGroupNumber(), null, "DELETE");
+                }
             }
         });
 
@@ -98,14 +102,27 @@ public class MainScene extends Scene {
             for (JsonElement element : numbers) {
                 list.add(element.getAsJsonObject().get("number").getAsInt());
             }
-            ChoiceDialog<Integer> dialog = new ChoiceDialog<>(list.get(0), list);
-            dialog.setTitle("Відкриття групи");
-            dialog.setHeaderText(null);
-            dialog.setContentText("Виберіть группу:");
-            Optional<Integer> value = dialog.showAndWait();
             Integer groupNumber = null;
-            if (value.isPresent()) {
-                groupNumber = value.get();
+            if (list.size() != 0) {
+                ChoiceDialog<Integer> dialog = new ChoiceDialog<>(list.get(0), list);
+                dialog.setTitle("Відкриття групи");
+                dialog.setHeaderText(null);
+                dialog.setContentText("Виберіть группу:");
+                Optional<Integer> value = dialog.showAndWait();
+                groupNumber = null;
+                if (value.isPresent()) {
+                    groupNumber = value.get();
+                }
+            }else {
+                Alert alert = new Alert(Alert.AlertType.WARNING);
+                alert.setTitle("Увага!");
+                alert.setHeaderText(null);
+                alert.setContentText("Ви не створили жодної группи!");
+
+                ButtonType cancelButton = new ButtonType("ОК", ButtonBar.ButtonData.CANCEL_CLOSE);
+
+                alert.getButtonTypes().setAll(cancelButton);
+                alert.showAndWait();
             }
             if (groupNumber != null) {
                 if (mainTable.getGroup() != null) {
@@ -122,7 +139,7 @@ public class MainScene extends Scene {
 
                     Optional<ButtonType> result = alert.showAndWait();
                     if (result.get() == yesButton) {
-                        //TODO save old group and open new
+                        saveGroup();
                     } else if (result.get() == noButton) {
                         try {
                             mainTable.initGroup(groupNumber);
@@ -137,9 +154,6 @@ public class MainScene extends Scene {
                     e.printStackTrace();
                 }
             }
-
-            //TODO add getting subjects list from server and choosing logic
-
         });
 
         changeGroup.setOnAction(event -> {
@@ -167,18 +181,7 @@ public class MainScene extends Scene {
         });
 
         saveGroup.setOnAction(event -> {
-            for (JsonArray arr : jsonToCreate) {
-                Conn.send(Conn.MAIN_URL + Conn.DATE_SUFFIX, arr, "POST");
-            }
-            jsonToCreate.clear();
-            jsonToDelete.forEach((integer, jsonObject) -> {
-                Conn.send(Conn.MAIN_URL + Conn.DATE_DESTROY_SUFFIX + integer + "/", jsonObject, "DELETE");
-            });
-            jsonToDelete.clear();
-            mainTable.getCache().forEach((integer, jsonObject) -> {
-                Conn.send(Conn.MAIN_URL + Conn.DATE_UPDATE_SUFFIX + integer + "/", jsonObject, "PUT");
-            });
-            mainTable.getCache().clear();
+            saveGroup();
         });
 
         addColumn.setOnAction(event -> {
@@ -204,46 +207,58 @@ public class MainScene extends Scene {
 
 
                 mainTable.addCompletedHours(date);
-                mainTable.addCompletedHoursColumns(date);
+                mainTable.addCompletedHoursColumns(mainTable.getGroup().getSubjects().get(0).getChData().size() - 1);
                 JsonArray array = new JsonArray();
                 for (Subject s : mainTable.getGroup().getSubjects()) {
                     JsonObject obj = new JsonObject();
-                    int last = s.getCompletedHours().size() - 1;
-                    String lastDate = new SimpleDateFormat("yyyy-MM-dd").format(s.getDates().get(last));
+                    int last = s.getChData().size() - 1;
+                    String lastDate = new SimpleDateFormat("yyyy-MM-dd").format(s.getChData().get(last).getDate());
                     obj.add("for_date", new JsonPrimitive(lastDate));
-                    obj.add("completed", new JsonPrimitive(s.getCompletedHours().get(last)));
+                    obj.add("completed", new JsonPrimitive(s.getChData().get(last).getCompleted()));
+                    obj.add("left", new JsonPrimitive(s.getChData().get(last).getLeftTo()));
                     obj.add("changes", new JsonPrimitive(s.getChangedHoursValue()));
                     obj.add("subject", new JsonPrimitive(s.getId()));
                     array.add(obj);
                 }
-                jsonToCreate.add(array);
+                mainTable.getJsonToCreate().add(array);
 
                 //TODO realize creating editing title window on double click
             }
         });
 
         deleteColumn.setOnAction(event -> {
-            if (jsonToCreate.size() != 0) jsonToCreate.remove(jsonToCreate.size() - 1);
+            if (mainTable.getJsonToCreate().size() != 0) mainTable.getJsonToCreate().remove(mainTable.getJsonToCreate().size() - 1);
             else {
                 for (Subject s : mainTable.getGroup().getSubjects()) {
-                    JsonObject obj = new JsonObject();
-                    int last = s.getCompletedHours().size() - 1;
-                    String lastDate = new SimpleDateFormat("yyyy-MM-dd").format(s.getDates().get(last));
-                    obj.add("for_date", new JsonPrimitive(lastDate));
-                    obj.add("completed", new JsonPrimitive(s.getCompletedHours().get(last)));
-                    obj.add("changes", new JsonPrimitive(s.getChangedHoursValue()));
-                    obj.add("subject", new JsonPrimitive(s.getId()));
-                    jsonToDelete.put(s.getId(), obj);
+                    int last = s.getChData().size() - 1;
+                    jsonToDelete.add(s.getChData().get(last).getId());
                 }
             }
             int size = mainTable.getColumns().size();
             if (size > 6) {
                 mainTable.getColumns().remove(size - 2, size);
-                for (Subject s : mainTable.getGroup().getSubjects()) {
-                    s.removeCompletedHours();
-                }
+                mainTable.getGroup().getSubjects().forEach(Subject::removeCompletedHours);
             }
 
         });
+
+    }
+    private void saveGroup(){
+        for (JsonArray arr : mainTable.getJsonToCreate()) {
+            Conn.send(Conn.MAIN_URL + Conn.DATE_SUFFIX, arr, "POST");
+        }
+        mainTable.getJsonToCreate().clear();
+        mainTable.getCache().forEach((integer, jsonObject) -> {
+            Conn.send(Conn.MAIN_URL + Conn.DATE_UPDATE_SUFFIX + integer + "/", jsonObject, "PUT");
+        });
+        mainTable.getCache().clear();
+        mainTable.getChangedChanges().forEach((integer, jsonObject) -> {
+            Conn.send(Conn.MAIN_URL + Conn.CHANGES_UPDATE_SUFFIX + integer + "/", jsonObject, "PUT");
+        });
+        mainTable.getChangedChanges().clear();
+        jsonToDelete.forEach((integer) -> {
+            Conn.send(Conn.MAIN_URL + Conn.DATE_DESTROY_SUFFIX + integer + "/", null, "DELETE");
+        });
+        jsonToDelete.clear();
     }
 }

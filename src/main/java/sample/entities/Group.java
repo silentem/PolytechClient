@@ -36,37 +36,4 @@ public class Group {
         return subjects;
     }
 
-    public JsonArray getStaticValuesJSON() {
-        JsonArray group = new JsonArray();
-        JsonObject number = new JsonObject();
-        number.add("group", new JsonPrimitive(getGroupNumber()));
-        group.add(number);
-        for (Subject subject : getSubjects())
-            group.add(subject.getStaticValuesJSON());
-        return group;
-    }
-
-    public JsonArray getJsonToCrate() {
-        JsonArray group = new JsonArray();
-        for (Subject subject : getSubjects()) {
-            if (subject.getId() == null){
-                JsonObject subjectJson = subject.getStaticValuesJSON();
-                subjectJson.add("group", new JsonPrimitive(getGroupNumber()));
-                group.add(subjectJson);
-            }
-        }
-        return group;
-    }
-
-    public JsonArray getJsonStaticToUpdate(){
-        JsonArray group = new JsonArray();
-        for (Subject subject : getSubjects()) {
-            if (subject.getId() != null && subject.isStaticValChanged()){
-                JsonObject subjectJson = subject.getStaticValuesJSON();
-                subjectJson.add("group", new JsonPrimitive(getGroupNumber()));
-                group.add(subjectJson);
-            }
-        }
-        return group;
-    }
 }

@@ -10,23 +10,21 @@ import java.net.URL;
 
 public class Conn {
 
-    public static JsonObject groupJson = new JsonObject();
 
-    public static final String MAIN_URL = "http://abe39b42.ngrok.io";
+    public static final String MAIN_URL = "http://7a0fc72e.ngrok.io";
     public static final String GROUPS_SUFFIX = "/Groups/";
+    public static final String CHANGES_GET_SUFFIX = "/changes/get/";
+    public static final String CHANGES_UPDATE_SUFFIX = "/changes/update/";
     public static final String CREATE_GROUP_SUFFIX = "/create/group/";
     public static final String SUBJECTS_SUFFIX = "/Subjects/";
     public static final String DATE_SUFFIX = "/Date/";
-    public static final String GROUP_UPDATE_SUFFIX = "/group/update/";
     public static final String GROUP_DESTROY_SUFFIX = "/group/destroy/";
     public static final String SUBJECT_UPDATE_SUFFIX = "/subject/update/";
     public static final String SUBJECT_DESTROY_SUFFIX = "/subject/destroy/";
     public static final String SUBJECT_GROUP_SUFFIX = "/subject/group/";
-    public static final String SUBJECT_GROUP_NAME_SUFFIX = "/subject/group_name/";
     public static final String DATE_UPDATE_SUFFIX = "/date/update/";
     public static final String DATE_DESTROY_SUFFIX = "/date/destroy/";
     public static final String DATE_FOR_SUBJECT_SUFFIX = "/date/for_subject/";
-    public static final String DATE_FOR_DATE_SUFFIX = "/date/for_date/";
 
     public static void createGroup(int number, ObservableList<Subject> subjects) throws IOException {
         JsonObject json = new JsonObject();
@@ -49,6 +47,7 @@ public class Conn {
         try {
             URL url = new URL(sUrl);
             request = (HttpURLConnection) url.openConnection();
+            request.setRequestProperty("Authorization", "Token 23dff29f61d2d01cc2b594bd5272d91190af7283");
             request.connect();
         } finally {
             if (request != null) {
@@ -69,6 +68,7 @@ public class Conn {
             conn.setDoOutput(true);
             conn.setRequestMethod(method);
             conn.setRequestProperty("Content-Type", "application/json");
+            conn.addRequestProperty("Authorization", "Token 23dff29f61d2d01cc2b594bd5272d91190af7283");
 
 
             if (json != null) {

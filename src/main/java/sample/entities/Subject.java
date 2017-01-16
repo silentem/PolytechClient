@@ -22,9 +22,7 @@ public class Subject {
     private SimpleIntegerProperty changedHoursValue;
     private SimpleIntegerProperty hoursQuoteValue;
     private SimpleIntegerProperty weeklyHoursValue;
-    private List<Date> dates;
-    private List<Integer> completedHours;
-    private List<Integer> leftToDoHours;
+    private List<ChData> chDatas;
     private boolean isStaticValChanged;
     private boolean isVarValChanged;
 
@@ -34,9 +32,7 @@ public class Subject {
         setChangedHoursValue(0);
         this.setHoursQuoteValue(hoursQuoteValue);
         setWeeklyHoursValue(0);
-        dates = new ArrayList<>();
-        completedHours = new ArrayList<>();
-        leftToDoHours = new ArrayList<>();
+        chDatas = new ArrayList<>();
     }
 
     public Integer getId() {
@@ -107,78 +103,30 @@ public class Subject {
         isVarValChanged = varValChanged;
     }
 
-    public List<Date> getDates() {
-        return dates;
+    public List<ChData> getChData() {
+        return chDatas;
     }
 
-    public List<Integer> getCompletedHours() {
-        return completedHours;
+    public void addCompletedHours(Date date, Integer value, Integer leftValue) {
+        getChData().add(new ChData(date, value, leftValue));
     }
-
-    public List<Integer> getLeftToDoHours() {
-        return leftToDoHours;
-    }
-
-    private void setLeftToDoHours(Integer value, int pos) {
-        leftToDoHours.set(pos, value);
-    }
-
-    private void addDate(Date date) {
-        dates.add(date);
-    }
-
-    private void setDate(Date date, int pos) {
-        dates.add(pos, date);
-    }
-
-    private void addLeftToDOHours(Integer value) {
-        leftToDoHours.add(value);
-    }
-
-    public void addCompletedHours(Date date, Integer value) {
-        addDate(date);
-        completedHours.add(value);
-        int size = getCompletedHours().size();
-        if (size == 1) addLeftToDOHours(getTotalHours() - value);
-        else addLeftToDOHours(getLeftToDoHours().get(size - 2) - value);
-
+    public void addCompletedHours(Date date, Integer value, Integer leftValue, Integer id) {
+        getChData().add(new ChData(date, value, leftValue));
+        getChData().get(getChData().size() - 1).setId(id);
     }
 
     public void setCompletedHours(Integer value, int pos) {
-        completedHours.set(pos, value);
-
-        for (int i = pos; i < getLeftToDoHours().size(); i++) {
-            if (i == 0) setLeftToDoHours(getTotalHours() - getCompletedHours().get(i), i);
-            else setLeftToDoHours(getLeftToDoHours().get(i - 1) - getCompletedHours().get(i), i);
+        Integer oldValue = getChData().get(pos).getCompleted();
+        Integer diff = oldValue - value;
+        getChData().get(pos).setCompleted(value);
+        for (int i = pos; i < getChData().size(); i++) {
+            getChData().get(i).setLeftTo(getChData().get(i).getLeftTo() + diff);
         }
+
     }
 
-    public JsonObject getStaticValuesJSON() {
-        JsonObject subjectJson = new JsonObject();
-        subjectJson.add("name", new JsonPrimitive(getSubjectName()));
-        subjectJson.add("professor", new JsonPrimitive(getProfessorInitials()));
-        subjectJson.add("SEMESTERS_HOUR", new JsonPrimitive(getHoursQuoteValue()));
-        subjectJson.add("week_load", new JsonPrimitive(getWeeklyHoursValue()));
-        return subjectJson;
-    }
-
-    public JsonArray getVarValuesJSON() {
-        JsonArray subjectJson = new JsonArray();
-        for (int i = 0; i < getDates().size(); i++) {
-            JsonObject json = new JsonObject();
-            json.add("id", new JsonPrimitive(getId()));
-            json.add("for_date", new JsonPrimitive(getDates().get(i).toString()));
-            json.add("completed", new JsonPrimitive(getCompletedHours().get(i)));
-            json.add("left", new JsonPrimitive(getLeftToDoHours().get(i)));
-            json.add("changes", new JsonPrimitive(getChangedHoursValue()));
-            subjectJson.add(json);
-        }
-        return subjectJson;
-    }
 
     public void removeCompletedHours() {
-        getDates().remove(getDates().size() - 1);
-        getCompletedHours().remove(getCompletedHours().size() - 1);
-        getLeftToDoHours().remove(getLeftToDoHours().size() - 1);
+        getChData().remove(getChData().size() - 1);
     }
 }

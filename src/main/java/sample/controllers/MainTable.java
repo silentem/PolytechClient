@@ -1,6 +1,9 @@
 package sample.controllers;
 
-import com.google.gson.*;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -12,7 +15,7 @@ import javafx.util.StringConverter;
 import sample.entities.Group;
 import sample.entities.Subject;
 
-import java.io.*;
+import java.io.IOException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -24,10 +27,14 @@ public class MainTable extends TableView<Subject> {
     private Group group;
 
     private Map<Integer, JsonObject> jsonToChange;
+    private List<JsonArray> jsonToCreate;
+    private Map<Integer, JsonObject> changedChanges;
 
     public MainTable() {
 
         jsonToChange = new HashMap<>();
+        jsonToCreate = new ArrayList<>();
+        changedChanges = new HashMap<>();
 
         TableColumn<Subject, String> subjectColumn = new TableColumn<>("Предмети");
         subjectColumn.setMinWidth(100);
@@ -49,7 +56,7 @@ public class MainTable extends TableView<Subject> {
         totalHoursColumn.setMinWidth(100);
         totalHoursColumn.setCellValueFactory(param -> new SimpleObjectProperty<>(param.getValue().getTotalHours())
         );
-        TableColumn<sample.entities.Subject, Integer> changedHoursColumn = new TableColumn<>("Зняття годин");
+        TableColumn<Subject, Integer> changedHoursColumn = new TableColumn<>("Зняття годин");
         changedHoursColumn.setMinWidth(100);
         changedHoursColumn.setCellValueFactory(
                 new PropertyValueFactory<>("changedHoursValue")
@@ -72,16 +79,20 @@ public class MainTable extends TableView<Subject> {
             Subject subject = event.getTableView().getItems().get(
                     event.getTablePosition().getRow());
             subject.setChangedHoursValue(value);
-            //TODO get info
-//            jsonToChange.put(subject.getId(), );
+
+            JsonObject obj = new JsonObject();
+            obj.add("changes", new JsonPrimitive(value));
+            obj.add("subject", new JsonPrimitive(subject.getId()));
+            changedChanges.put(subject.getId(), obj);
+
             this.refresh();
         });
-        TableColumn<sample.entities.Subject, String> totalHoursToFinishColumn = new TableColumn<>("К-ть годин до виконання");
+        TableColumn<Subject, String> totalHoursToFinishColumn = new TableColumn<>("К-ть годин до виконання");
         totalHoursToFinishColumn.setMinWidth(100);
         totalHoursToFinishColumn.setCellValueFactory(
                 new PropertyValueFactory<>("hoursQuoteValue")
         );
-        TableColumn<sample.entities.Subject, String> weeklyHoursColumn = new TableColumn<>("Тижневе навантаження");
+        TableColumn<Subject, String> weeklyHoursColumn = new TableColumn<>("Тижневе навантаження");
         weeklyHoursColumn.setMinWidth(100);
         weeklyHoursColumn.setCellValueFactory(
                 new PropertyValueFactory<>("weeklyHoursValue")
@@ -106,6 +117,8 @@ public class MainTable extends TableView<Subject> {
 
         JsonArray jsonSubjects =
                 (JsonArray) Conn.getJson(Conn.MAIN_URL + Conn.SUBJECT_GROUP_SUFFIX + number + "/");
+        JsonArray jsonChanges =
+                (JsonArray) Conn.getJson(Conn.MAIN_URL + Conn.CHANGES_GET_SUFFIX + number + "/");
 
         for (JsonElement jsonSubject : jsonSubjects) {
 
@@ -120,13 +133,18 @@ public class MainTable extends TableView<Subject> {
             subject.setWeeklyHoursValue(weeklyHours);
             subject.setId(subjectId);
 
+            for (JsonElement elem : jsonChanges) {
+                if (elem.getAsJsonObject().get("subject").getAsInt() == subjectId)
+                    subject.setChangedHoursValue(elem.getAsJsonObject().get("changes").getAsInt());
+            }
+
             JsonArray jsonAdditionalValues =
                     (JsonArray) Conn.getJson(Conn.MAIN_URL + Conn.DATE_FOR_SUBJECT_SUFFIX + subjectId + "/");
 
             for (JsonElement jsonElement : jsonAdditionalValues) {
                 JsonObject jsonValue = jsonElement.getAsJsonObject();
                 String sDate = jsonValue.get("for_date").getAsString();
-                DateFormat df = new SimpleDateFormat("dd-MM-yyyy");
+                DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
                 Date date = null;
                 try {
                     date = df.parse(sDate);
@@ -135,7 +153,9 @@ public class MainTable extends TableView<Subject> {
                 }
 
                 Integer value = jsonValue.get("completed").getAsInt();
-                subject.addCompletedHours(date, value);
+                Integer id = jsonValue.get("id").getAsInt();
+                Integer valueLeft = jsonValue.get("left").getAsInt();
+                subject.addCompletedHours(date, value, valueLeft, id);
             }
             group.addSubject(subject);
         }
@@ -154,27 +174,33 @@ public class MainTable extends TableView<Subject> {
     }
 
     public void fillCompletedHoursColumns() {
-        List<Date> dates;
         if (group == null) return;
         if (group.getSubjects().size() == 0) return;
 
-        dates = group.getSubjects().get(0).getDates();
+        this.getColumns().remove(6, this.getColumns().size() - 1);
 
-        for (Date date : dates) {
-            addCompletedHoursColumns(date);
+        for (int i = 0; i < getGroup().getSubjects().get(0).getChData().size(); i++) {
+            addCompletedHoursColumns(i);
         }
+
     }
 
     public void addCompletedHours(Date date) {
         for (Subject subject : group.getSubjects()) {
-            subject.addCompletedHours(date, subject.getWeeklyHoursValue());
+            if (subject.getChData().size() == 0) {
+                Integer total = subject.getTotalHours();
+                subject.addCompletedHours(date, subject.getWeeklyHoursValue(), total - subject.getWeeklyHoursValue());
+            } else {
+                Integer prevLeft = subject.getChData().get(subject.getChData().size() - 1).getLeftTo();
+                subject.addCompletedHours(date, subject.getWeeklyHoursValue(), prevLeft - subject.getWeeklyHoursValue());
+            }
         }
     }
 
-    public void addCompletedHoursColumns(Date date) {
+    public void addCompletedHoursColumns(int pos) {
         if (group == null) return;
 
-        String sDate = new SimpleDateFormat("dd.MM.yyyy").format(date);
+        String sDate = new SimpleDateFormat("dd.MM.yyyy").format(getGroup().getSubjects().get(0).getChData().get(pos).getDate());
         TableColumn<Subject, Integer> completedColumn = new TableColumn<>("В " + sDate);
         completedColumn.setMinWidth(100);
 
@@ -194,39 +220,40 @@ public class MainTable extends TableView<Subject> {
         }));
         completedColumn.setOnEditCommit(event -> {
             Integer value = event.getNewValue();
-            int pos = (event.getTablePosition().getColumn() - 6) / 2;
+            int position = (event.getTablePosition().getColumn() - 6) / 2;
             Subject subject = event.getTableView().getItems().get(
                     event.getTablePosition().getRow());
-            subject.setCompletedHours(value, pos);
+            subject.setCompletedHours(value, position);
             subject.setVarValChanged(true);
 
-//            if (!(event.getNewValue().equals(event.getOldValue()))){
+            for (int i = position; i < subject.getChData().size(); i++) {
                 JsonObject obj = new JsonObject();
-                String lastDate = new SimpleDateFormat("yyyy-MM-dd").format(subject.getDates().get(pos));
+                String lastDate = new SimpleDateFormat("yyyy-MM-dd").format(subject.getChData().get(i).getDate());
+                obj.add("subject", new JsonPrimitive(subject.getId()));
                 obj.add("for_date", new JsonPrimitive(lastDate));
-                obj.add("completed", new JsonPrimitive(subject.getCompletedHours().get(pos)));
-                obj.add("changes", new JsonPrimitive(subject.getChangedHoursValue()));
-                jsonToChange.put(subject.getId(), obj);
-//            }
+                obj.add("completed", new JsonPrimitive(subject.getChData().get(i).getCompleted()));
+                obj.add("left", new JsonPrimitive(subject.getChData().get(i).getLeftTo()));
+                if (subject.getChData().get(i).getId() == null) {
+                    int subPos = i - (subject.getChData().size() - jsonToCreate.size());
+                    jsonToCreate.get(subPos).set(event.getTablePosition().getRow(), obj);
+                } else {
+                    jsonToChange.put(subject.getChData().get(i).getId(), obj);
+                }
+            }
 
             this.refresh();
         });
-
-        int last = group.getSubjects().get(0).getCompletedHours().size() - 1;
 
         //creating value factory for completed column
         completedColumn.setCellValueFactory(p -> {
 
             //getting subject into variable
+
             Subject subject = p.getValue();
 
             //getting dateKey for SSP()
 
-            Integer value;
-            if (last == -1) {
-                subject.addCompletedHours(date, subject.getWeeklyHoursValue());
-                value = subject.getCompletedHours().get(0);
-            } else value = subject.getCompletedHours().get(last);
+            Integer value = subject.getChData().get(pos).getCompleted();
 
             //returning property
             return new SimpleObjectProperty<>(value);
@@ -242,7 +269,7 @@ public class MainTable extends TableView<Subject> {
             //getting subject into variable
             Subject subject = param.getValue();
 
-            Integer value = subject.getLeftToDoHours().get(last);
+            Integer value = subject.getChData().get(pos).getLeftTo();
             //getting dateKey for SSP()
 
             //returning property
@@ -257,5 +284,13 @@ public class MainTable extends TableView<Subject> {
 
     public Map<Integer, JsonObject> getCache() {
         return jsonToChange;
+    }
+
+    public List<JsonArray> getJsonToCreate() {
+        return jsonToCreate;
+    }
+
+    public Map<Integer, JsonObject> getChangedChanges() {
+        return changedChanges;
     }
 }
